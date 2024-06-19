@@ -24,6 +24,7 @@ function use() {
   in_cyan "Como usar: $0 <nome_do_arquivo> [ordem] [quantidade]\n"
   in_cyan "  <nome_do_arquivo>  Nome do arquivo de entrada\n"
   in_cyan "  [ordem]            Ordem de classificação: 'asc' (padrão) ou 'desc'\n"
+  in_cyan "  [quantidade]      quantidade de registros a serem retornados (opcional)\n"
   exit 1
 }
 
@@ -50,7 +51,13 @@ function set_order() {
 function list_users() {
   local arquivo="$1"
   local sort_cmd="$2"
-  awk '{print $0}' "$arquivo" | $sort_cmd
+  local quantidade="$3"
+
+  if [[ -n "$quantidade" ]]; then
+    awk '{print $0}' "$arquivo" | $sort_cmd | head -n "$quantidade"
+  else
+    awk '{print $0}' "$arquivo" | $sort_cmd
+  fi
 }
 
 
@@ -58,11 +65,14 @@ function list_users() {
 #                        VARIÁVEIS                        #
 ###########################################################
 
-# Nome do arquivo de entrada
+# Nome do arquivo de entrada.
 ARQUIVO="$1"
 
-# Ordem de classificação (padrão: ascendente)
+# Ordem de classificação (padrão: ascendente).
 ORDEM="${2:-asc}"
+
+# quantidade de registros de retorno.
+QUANTIDADE="${3:-}"
 
 
 ###########################################################
@@ -71,6 +81,7 @@ ORDEM="${2:-asc}"
 
 # Verifica se o nome do arquivo foi passado como parâmetro
 if [[ $# -lt 1 ]]; then
+# if [[ $# -lt 1 || $# -gt 2 ]]; then
   use
 fi
 
@@ -81,4 +92,4 @@ check_file "$ARQUIVO"
 SORT_CMD=$(set_order "$ORDEM")
 
 # Lista os usuários ordenados
-list_users "$ARQUIVO" "$SORT_CMD"
+list_users "$ARQUIVO" "$SORT_CMD" "$QUANTIDADE"
