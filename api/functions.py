@@ -6,15 +6,17 @@ ALLOWED_EXTENSIONS = re.compile(r'^[\w\-.]+$')  # Permite caracteres alfanuméri
 
 
 class BashManager:
-    def __init__(self, data_dir='../data/raw'):
+    def __init__(self, data_dir='data/raw', scripts_bash='scripts/bash'):
         self.data_dir = data_dir
+        self.scripts_bash = scripts_bash
 
     def exec_script_bash(self, script_path, *args):
         # Função para executar BASH.
+        result = subprocess.run([f"./{self.scripts_bash}/{script_path}", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-        result = subprocess.run([f"./../scripts/bash/{script_path}", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             raise Exception(f"Erro ao executar o script Bash: {result.stderr}")
+
         return result.stdout
 
     def convert_to_json_format(self, bash_output):

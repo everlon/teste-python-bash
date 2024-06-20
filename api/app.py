@@ -9,7 +9,7 @@ app = Flask(__name__)
 bash_manager = BashManager()
 
 # Certifique-se de que a pasta de upload existe
-UPLOAD_FOLDER = '../data/raw'
+UPLOAD_FOLDER = 'data/raw'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
@@ -29,40 +29,57 @@ def index():
 # ROUTE 1: Upload de arquivo.
 @app.route('/upload-file', methods=['POST'])
 def upload_file():
-    if 'file' not in request.files:
-        app.logger.error('Nenhum arquivo informado pelo usuário.')
-        return jsonify({"Error": "Nenhum arquivo informado pelo usuário."}), 400
+    try:
+        if 'file' not in request.files:
+            app.logger.error('Nenhum arquivo informado pelo usuário.')
+            return jsonify({"Error": "Nenhum arquivo informado pelo usuário."}), 201
 
-    file = request.files['file']
+        file = request.files['file']
 
-    if file and bash_manager.allowed_file(file.filename):
-        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
-        file.save(filepath)
-        app.logger.info('Arquivo salvo com sucesso!')
-        return jsonify({"msg": "Arquivo salvo com sucesso!"}), 200
-    else:
-        app.logger.error('Nome do arquivo não é suportado.')
-        return jsonify({"Error": "Nome do arquivo não suportado. Certifique-se que não tenha caracteres especiais no nome do arquivo."}), 400
+        if file and bash_manager.allowed_file(file.filename):
+            filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+
+            file_check = bash_manager.search_file(file.filename)
+            if not file_check:
+                file.save(filepath)
+                app.logger.info('Arquivo salvo com sucesso!')
+                return jsonify({"msg": "Arquivo salvo com sucesso!"}), 200
+            else:
+                file.save(filepath)
+                app.logger.info('Arquivo substituído com sucesso!')
+                return jsonify({"msg": "Arquivo substituído com sucesso!"}), 204
+
+        else:
+            app.logger.error('Nome do arquivo não é suportado.')
+            return jsonify({"Error": "Nome do arquivo não suportado. Certifique-se que não tenha caracteres especiais no nome do arquivo."}), 400
+
+    except Exception as e:
+            app.logger.error('Ocorreu um erro: (%s)', e)
+            return f"Error: {e}", 500
 
 
 # ROUTE 2: Listar arquivos armazenados.
 # /files?page=1&limit=10
 @app.route('/files', methods=['GET'])
 def exec_script_get_files():
-    page = request.args.get('page', default=1, type=int)
-    limit = request.args.get('limit', default=10, type=int)
+    try:
+        page = request.args.get('page', default=1, type=int)
+        limit = request.args.get('limit', default=10, type=int)
 
-    files = bash_manager.search_file()
-    print(files)
+        files = bash_manager.search_file()
 
-    if not files:
-        app.logger.error('Arquivos não encontrados.')
-        return jsonify({"Error": "Nenhum arquivo armazenado."}), 404
+        if not files:
+            app.logger.error('Arquivos não encontrados.')
+            return jsonify({"Error": "Nenhum arquivo armazenado."}), 404
 
-    files = bash_manager.paginate_users(files, page, limit)
+        files = bash_manager.paginate_users(files, page, limit)
 
-    app.logger.info('Arquivos encontrados com sucesso!')
-    return jsonify(files), 200
+        app.logger.info('Arquivos encontrados com sucesso!')
+        return jsonify(files), 200
+
+    except Exception as e:
+        app.logger.error('Ocorreu um erro: (%s)', e)
+        return f"Error: {e}", 500
 
 
 # ROUTE 3: Usuários com maior size.
@@ -88,7 +105,7 @@ def exec_script_size_user():
             app.logger.error('Arquivo informado não existe.')
             return jsonify({"Error": "Arquivo informado não existe."}), 404
 
-        bash_output = bash_manager.exec_script_bash('max-min-size.sh', f"../data/raw/{file[0]}", size)
+        bash_output = bash_manager.exec_script_bash('max-min-size.sh', f"{UPLOAD_FOLDER}/{file[0]}", size)
         app.logger.info('Script BASH (order-by-username.sh) executado com sucesso!')
 
         users = bash_manager.convert_to_json_format(bash_output)
@@ -96,7 +113,7 @@ def exec_script_size_user():
         return jsonify(users), 200
 
     except Exception as e:
-        app.logger.error('An error occurred: (%s)', e)
+        app.logger.error('Ocorreu um erro: (%s)', e)
         return f"Error: {e}", 500
 
 
@@ -127,7 +144,7 @@ def exec_script_order_username():
             app.logger.error('Arquivo informado não existe.')
             return jsonify({"Error": "Arquivo informado não existe."}), 404
 
-        bash_output = bash_manager.exec_script_bash('order-by-username.sh', f"../data/raw/{file[0]}", order)
+        bash_output = bash_manager.exec_script_bash('order-by-username.sh', f"{UPLOAD_FOLDER}/{file[0]}", order)
         app.logger.info('Script BASH (order-by-username.sh) executado com sucesso!')
 
         users = bash_manager.convert_to_json_format(bash_output)
@@ -137,7 +154,7 @@ def exec_script_order_username():
         return jsonify(users), 200
 
     except Exception as e:
-        app.logger.error('An error occurred: (%s)', e)
+        app.logger.error('Ocorreu um erro: (%s)', e)
         return f"Error: {e}", 500
 
 
@@ -171,7 +188,7 @@ def exec_script_users_between_msgs():
         limit = request.args.get('limit', default=0)
         filter_term = request.args.get('filter', default='')
 
-        bash_output = bash_manager.exec_script_bash('between-msgs.sh', f"../data/raw/{file[0]}", limit_min, limit_max)
+        bash_output = bash_manager.exec_script_bash('between-msgs.sh', f"{UPLOAD_FOLDER}/{file[0]}", limit_min, limit_max)
         app.logger.info('Script BASH (between-msgs.sh) executado com sucesso!')
 
         users = bash_manager.convert_to_json_format(bash_output)
@@ -181,7 +198,7 @@ def exec_script_users_between_msgs():
         return jsonify(users), 200
 
     except Exception as e:
-        app.logger.error('An error occurred: (%s)', e)
+        app.logger.error('Ocorreu um erro: (%s)', e)
         return f"Error: {e}", 500
 
 
@@ -189,7 +206,7 @@ def exec_script_users_between_msgs():
 # Exemplo de retorno com número de Erros em JSON.
 @app.errorhandler(404)
 def not_found(error):
-    app.logger.error('An error occurred: 404')
+    app.logger.error('Rota não encontrada: 404')
     return {"msg": 'ERRO 404!'}, 404
 
 
