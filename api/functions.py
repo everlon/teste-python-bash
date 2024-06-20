@@ -11,7 +11,7 @@ class BashManager:
     def exec_script_bash(self, script_path, *args):
         # Função para executar BASH.
 
-        result = subprocess.run([script_path, *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run([f"./../scripts/bash/{script_path}", *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if result.returncode != 0:
             raise Exception(f"Erro ao executar o script Bash: {result.stderr}")
         return result.stdout

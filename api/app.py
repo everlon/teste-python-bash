@@ -31,23 +31,68 @@ def show_user_profile(username):
     return f'User {escape(username)}', 200
 
 
+
+# ROUTE 3: Usuários com maior size.
+# /users?file=input&size=max
+@app.route('/users-size', methods=['GET'])
+def exec_script_size_user():
+    try:
+        if request.is_json:
+            # Verifica se enviou por Raw/JSON
+            data = request.get_json()
+            arquivo = data.get('file', None)
+            size = data.get('size', None)
+        else:
+            # Enviado por Parâmetros URL
+            arquivo = request.args.get('file', default='', type=str)
+            size = request.args.get('size', default='', type=str)
+
+        size = 'min' if size == 'min' else '' # Defina "min" caso tenha colocado valor no parâmetro site da URL.
+
+        file = bash_manager.search_file(arquivo)
+
+        if not arquivo or not file:
+            return jsonify({"Error": "Arquivo informado não existe."}), 404
+
+        bash_output = bash_manager.exec_script_bash('max-min-size.sh', f"../data/raw/{file[0]}", size)
+        app.logger.info('Script BASH (order-by-username.sh) executado com sucesso!')
+
+        users = bash_manager.convert_to_json_format(bash_output)
+
+        return jsonify(users), 200
+
+    except Exception as e:
+        app.logger.error('An error occurred: (%s)', e)
+        return f"Error: {e}", 500
+
+
 # ROUTE 4: Usuários.
 # /users?file=input&order=asc&page=1&limit=15&filter=example
 @app.route('/users', methods=['GET'])
 def exec_script_order_username():
     try:
-        arquivo = request.args.get('file', default='', type=str)
+        if request.is_json:
+            # Verifica se enviou por Raw/JSON
+            data = request.get_json()
+            arquivo = data.get('file', '')
+            order = data.get('order', 'asc')
+            limit = data.get('limit', 0)
+            page = data.get('page', 1)
+            filter_term = data.get('filter', '')
+        else:
+            # Enviado por Parâmetros URL
+            arquivo = request.args.get('file', default='', type=str)
+            order = request.args.get('order', default='asc', type=str)
+            limit = request.args.get('limit', default=0)
+            page = request.args.get('page', default=1, type=int)
+            filter_term = request.args.get('filter', default='')
+
         file = bash_manager.search_file(arquivo)
 
         if not arquivo or not file:
-            return {"Error": "Arquivo informado não existe."}, 404
+            return jsonify({"Error": "Arquivo informado não existe."}), 404
 
-        order = request.args.get('order', default='asc', type=str)
-        limit = request.args.get('limit', default=0)
-        page = request.args.get('page', default=1, type=int)
-        filter_term = request.args.get('filter', default='')
-
-        bash_output = bash_manager.exec_script_bash('./../scripts/bash/order-by-username.sh', f"../data/raw/{file[0]}", order)
+        bash_output = bash_manager.exec_script_bash('order-by-username.sh', f"../data/raw/{file[0]}", order)
         app.logger.info('Script BASH (order-by-username.sh) executado com sucesso!')
 
         users = bash_manager.convert_to_json_format(bash_output)
@@ -63,17 +108,25 @@ def exec_script_order_username():
 
 # ROUTE 5: Quantidade de mensagens na INBOX.
 # /users-between?file=input&min=50&max=200&page=1&filter=example
-@app.route('/users-between', methods=['GET'])
-def executar_script():
+@app.route('/users-between-msgs', methods=['GET'])
+def exec_script_users_between_msgs():
     try:
-        arquivo = request.args.get('file', default='', type=str)
+        if request.is_json:
+            # Verifica se enviou por Raw/JSON
+            data = request.get_json()
+            arquivo = data.get('file', '')
+            limit_min = str(data.get('min')) # Campo obrigatório
+            limit_max = str(data.get('max')) # Campo obrigatório
+        else:
+            # Enviado por Parâmetros URL
+            arquivo = request.args.get('file', default='', type=str)
+            limit_min = request.args.get('min') # Campo obrigatório
+            limit_max = request.args.get('max') # Campo obrigatório
+
         file = bash_manager.search_file(arquivo)
 
         if not arquivo or not file:
-            return {"Error": "Arquivo informado não existe."}, 404
-
-        limit_min = request.args.get('min')
-        limit_max = request.args.get('max')
+            return jsonify({"Error": "Arquivo informado não existe."}), 404
 
         if not limit_min and not limit_max:
             return {"Error": "Informar valor mínimo (min=) e máximo (max=) para faixa de quantidade de mensagens."}, 400
@@ -82,7 +135,7 @@ def executar_script():
         limit = request.args.get('limit', default=0)
         filter_term = request.args.get('filter', default='')
 
-        bash_output = bash_manager.exec_script_bash('./../scripts/bash/between-msgs.sh', f"../data/raw/{file[0]}", limit_min, limit_max)
+        bash_output = bash_manager.exec_script_bash('between-msgs.sh', f"../data/raw/{file[0]}", limit_min, limit_max)
         app.logger.info('Script BASH (between-msgs.sh) executado com sucesso!')
 
         users = bash_manager.convert_to_json_format(bash_output)
