@@ -1,3 +1,4 @@
+import re, os
 from flask import Flask, request, jsonify
 from markupsafe import escape
 
@@ -7,29 +8,41 @@ from functions import BashManager
 app = Flask(__name__)
 bash_manager = BashManager()
 
-# Exemplo de Methods e já retorna Json por default.
+# Certifique-se de que a pasta de upload existe
+UPLOAD_FOLDER = '../data/raw'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+
+# ROUTE HOME: Mensagem de boas-vindas.
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    user = {
-        "username": 'everlon',
-        "theme": 'classic',
-        "image": 'perfil.png',
-    }
-    return user, 200
-
-
-# Exemplo de Parâmetro na URL e Loggings.
-@app.route('/user/<username>')
-def show_user_profile(username):
     # app.logger.debug('A value for debugging')
-    # app.logger.info('Doing something')
     # app.logger.warning('A warning occurred (%d apples)', 42)
     # app.logger.error('An error occurred')
     # app.logger.critical('An error critical occurred')
 
-    app.logger.warning('Informando usuário (%s) por URL.', escape(username))
-    return f'User {escape(username)}', 200
+    app.logger.info('Mensagens de boas vindas.')
+    return { "msg": 'Bem vindo(a)!' }, 200
 
+
+# ROUTE 1: Upload de arquivo.
+@app.route('/upload-file', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        app.logger.error('Nenhum arquivo informado pelo usuário.')
+        return jsonify({"Error": "Nenhum arquivo informado pelo usuário."}), 400
+
+    file = request.files['file']
+
+    if file and bash_manager.allowed_file(file.filename):
+        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+        file.save(filepath)
+        app.logger.info('Arquivo salvo com sucesso!')
+        return jsonify({"msg": "Arquivo salvo com sucesso!"}), 200
+    else:
+        app.logger.error('Nome do arquivo não é suportado.')
+        return jsonify({"Error": "Nome do arquivo não suportado. Certifique-se que não tenha caracteres especiais no nome do arquivo."}), 400
 
 
 # ROUTE 2: Listar arquivos armazenados.
@@ -40,6 +53,7 @@ def exec_script_get_files():
     limit = request.args.get('limit', default=10, type=int)
 
     files = bash_manager.search_file()
+    print(files)
 
     if not files:
         app.logger.error('Arquivos não encontrados.')

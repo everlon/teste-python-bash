@@ -1,7 +1,8 @@
 import subprocess
 import re
 import os
-# import json
+
+ALLOWED_EXTENSIONS = re.compile(r'^[\w\-.]+$')  # Permite caracteres alfanuméricos, hífens e underlines
 
 
 class BashManager:
@@ -72,3 +73,6 @@ class BashManager:
             end = len(users)
 
         return users[start:end]
+
+    def allowed_file(self, filename):
+        return ALLOWED_EXTENSIONS.match(filename) is not None
