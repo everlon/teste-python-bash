@@ -32,6 +32,25 @@ def show_user_profile(username):
 
 
 
+# ROUTE 2: Listar arquivos armazenados.
+# /files?page=1&limit=10
+@app.route('/files', methods=['GET'])
+def exec_script_get_files():
+    page = request.args.get('page', default=1, type=int)
+    limit = request.args.get('limit', default=10, type=int)
+
+    files = bash_manager.search_file()
+
+    if not files:
+        app.logger.error('Arquivos não encontrados.')
+        return jsonify({"Error": "Nenhum arquivo armazenado."}), 404
+
+    files = bash_manager.paginate_users(files, page, limit)
+
+    app.logger.info('Arquivos encontrados com sucesso!')
+    return jsonify(files), 200
+
+
 # ROUTE 3: Usuários com maior size.
 # /users?file=input&size=max
 @app.route('/users-size', methods=['GET'])
@@ -52,6 +71,7 @@ def exec_script_size_user():
         file = bash_manager.search_file(arquivo)
 
         if not arquivo or not file:
+            app.logger.error('Arquivo informado não existe.')
             return jsonify({"Error": "Arquivo informado não existe."}), 404
 
         bash_output = bash_manager.exec_script_bash('max-min-size.sh', f"../data/raw/{file[0]}", size)
@@ -90,6 +110,7 @@ def exec_script_order_username():
         file = bash_manager.search_file(arquivo)
 
         if not arquivo or not file:
+            app.logger.error('Arquivo informado não existe.')
             return jsonify({"Error": "Arquivo informado não existe."}), 404
 
         bash_output = bash_manager.exec_script_bash('order-by-username.sh', f"../data/raw/{file[0]}", order)
@@ -126,6 +147,7 @@ def exec_script_users_between_msgs():
         file = bash_manager.search_file(arquivo)
 
         if not arquivo or not file:
+            app.logger.error('Arquivo informado não existe.')
             return jsonify({"Error": "Arquivo informado não existe."}), 404
 
         if not limit_min and not limit_max:

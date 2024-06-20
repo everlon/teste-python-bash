@@ -45,11 +45,10 @@ class BashManager:
 
             if search:
                 # Selecionar o arquivo de nome idêntico ao informado.
-                files = [f for f in files if f == search and os.path.isfile(os.path.join(self.data_dir, f))]
+                return [f for f in files if f == search and os.path.isfile(os.path.join(self.data_dir, f))]
             else:
-                files = [f for f in files if os.path.isfile(os.path.join(self.data_dir, f))]
-
-            return files
+                # Retorna todos os arquivos da pasta '../data/raw'.
+                return [f for f in files if os.path.isfile(os.path.join(self.data_dir, f))]
 
         except FileNotFoundError:
             return []
