@@ -2,7 +2,9 @@ import subprocess
 import re
 import os
 
-ALLOWED_EXTENSIONS = re.compile(r'^[\w\-.]+$')  # Permite caracteres alfanuméricos, hífens e underlines
+# Permite caracteres alfanuméricos, hífens e underlines
+# Usei REGEX para simplificar
+ALLOWED_EXTENSIONS = re.compile(r'^[\w\-.]+$')
 
 
 class BashManager:
