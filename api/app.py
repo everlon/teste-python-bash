@@ -1,6 +1,7 @@
 import re
 import os
 # import secrets
+import datetime
 from flask import Flask, request, jsonify
 from markupsafe import escape
 
@@ -55,7 +56,8 @@ def create_app():
             app.logger.error('Erro ao efeturar o login.')
             return jsonify({"Error": "Erro ao efeturar o login."}), 401
 
-        access_token = create_access_token(identity=username)
+        expires = datetime.timedelta(hours=1)
+        access_token = create_access_token(identity=username, expires_delta=expires)
         app.logger.info('Token criado com sucesso!')
         return jsonify(access_token=access_token)
 
