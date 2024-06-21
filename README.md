@@ -29,6 +29,13 @@ Rotas:
 ![Postman Docker](docs/Screenshot_postman_Docker.png "Postman Docker")
 
 
+#### Autenticação e Autorização
+
+> Não fiz um sistema completo com DB e SQLAlchemy, mas somente um exemplo de como colocar autenticação e autorização por JWT Token com Flask-JWT-Extended. Coloquei as rotas protegidas com excessão a de "Boas-vindas" e "Login" (claro).
+
+- [POST] `/login` [teste/123456] Acesso com retorno do TokenJWT (Bearer Token).
+
+
 ### Test
 
 Testando ShellScripts:

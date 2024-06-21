@@ -1,7 +1,13 @@
 import re
 import os
+# import secrets
 from flask import Flask, request, jsonify
 from markupsafe import escape
+
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
 
 from resources.users_manager import UsersManager
 from resources.bash_manager import BashManager
@@ -20,6 +26,10 @@ def create_app():
     UPLOAD_FOLDER = 'data/raw'
     os.makedirs((UPLOAD_FOLDER), exist_ok=True)
 
+    # secrets.token_urlsafe()
+    app.config["JWT_SECRET_KEY"] = '07OadLS35KQ6V_nO4pQwxzoMy96P5lBr3eWcxYWhpE4'
+    jwt = JWTManager(app)
+
 
 
     # ROUTE HOME: Mensagem de boas-vindas.
@@ -31,11 +41,30 @@ def create_app():
         # app.logger.critical('An error critical occurred')
 
         app.logger.info('Mensagens de boas vindas.')
-        return { "msg": 'Bem vindo(a)!' }, 200
+        return { "msg": f"Bem vindo(a)!" }, 200
+
+
+    # Rota exemplo para autenticar os usuários e retornar JWTs.
+    # A função create_access_token() é usada para gerar o Token JWT.
+    @app.route("/login", methods=["POST"])
+    def login():
+        username = request.json.get("username", None)
+        password = request.json.get("password", None)
+
+        if username != "teste" or password != "123456":
+            app.logger.error('Erro ao efeturar o login.')
+            return jsonify({"Error": "Erro ao efeturar o login."}), 401
+
+        access_token = create_access_token(identity=username)
+        app.logger.info('Token criado com sucesso!')
+        return jsonify(access_token=access_token)
+
+
 
 
     # ROUTE 1: Upload de arquivo.
     @app.route('/upload-file', methods=['POST'])
+    @jwt_required()
     def upload_file():
         try:
             if 'file' not in request.files:
@@ -69,6 +98,7 @@ def create_app():
     # ROUTE 2: Listar arquivos armazenados.
     # /files?page=1&limit=10&search=file.txt
     @app.route('/files', methods=['GET'])
+    @jwt_required()
     def exec_script_get_files():
         try:
             search = request.args.get('search', default='', type=str)
@@ -94,6 +124,7 @@ def create_app():
     # ROUTE 3: Usuários com maior size.
     # /users?file=input&size=max
     @app.route('/users-size', methods=['GET'])
+    @jwt_required()
     def exec_script_size_user():
         try:
             if request.is_json:
@@ -129,6 +160,7 @@ def create_app():
     # ROUTE 4: Usuários.
     # /users?file=input&order=asc&page=1&limit=15&filter=example
     @app.route('/users', methods=['GET'])
+    @jwt_required()
     def exec_script_order_username():
         try:
             if request.is_json:
@@ -170,6 +202,7 @@ def create_app():
     # ROUTE 5: Quantidade de mensagens na INBOX.
     # /users-between?file=input&min=50&max=200&page=1&filter=example
     @app.route('/users-between-msgs', methods=['GET'])
+    @jwt_required()
     def exec_script_users_between_msgs():
         try:
             if request.is_json:

@@ -28,4 +28,7 @@ class FilesManager:
 
 
     def allowed_file(self, filename):
+        # Não implementei um sistema completo de verificação do arquivo para permitir somente
+        # arquivos textos no formato padrão, mas somente verifica o formato do nome do arquivo.
+        # Aqui ele irá poderá enviar qualquer tipo de extensão ou formato por se tratar de um teste.
         return ALLOWED_EXTENSIONS.match(filename) is not None
