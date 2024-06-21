@@ -3,12 +3,18 @@ import os
 from flask import Flask, request, jsonify
 from markupsafe import escape
 
-from functions import BashManager
+from resources.users_manager import UsersManager
+from resources.bash_manager import BashManager
+from resources.files_manager import FilesManager
 
 
 def create_app():
     app = Flask(__name__)
+
+    # Usando os recursos da API
+    users_manager = UsersManager()
     bash_manager = BashManager()
+    files_manager = FilesManager()
 
     # Certifique-se de que a pasta de upload existe
     UPLOAD_FOLDER = 'data/raw'
@@ -38,10 +44,10 @@ def create_app():
 
             file = request.files['file']
 
-            if file and bash_manager.allowed_file(file.filename):
+            if file and files_manager.allowed_file(file.filename):
                 filepath = os.path.join(UPLOAD_FOLDER, file.filename)
 
-                file_check = bash_manager.search_file(file.filename)
+                file_check = files_manager.search_file(file.filename)
                 if not file_check:
                     file.save(filepath)
                     app.logger.info('Arquivo salvo com sucesso!')
@@ -69,13 +75,13 @@ def create_app():
             page = request.args.get('page', default=1, type=int)
             limit = request.args.get('limit', default=10, type=int)
 
-            files = bash_manager.search_file(search)
+            files = files_manager.search_file(search)
 
             if not files:
                 app.logger.error('Arquivo(s) não encontrado(s).')
                 return jsonify({"Error": "Arquivo(s) não encontrado(s)."}), 404
 
-            files = bash_manager.paginate_users(files, page, limit)
+            files = users_manager.paginate_users(files, page, limit)
 
             app.logger.info('Arquivos encontrados com sucesso!')
             return jsonify(files), 200
@@ -102,7 +108,7 @@ def create_app():
 
             size = 'min' if size == 'min' else '' # Defina "min" caso tenha colocado valor no parâmetro site da URL.
 
-            file = bash_manager.search_file(arquivo)
+            file = files_manager.search_file(arquivo)
 
             if not arquivo or not file:
                 app.logger.error('Arquivo informado não existe.')
@@ -111,7 +117,7 @@ def create_app():
             bash_output = bash_manager.exec_script_bash('max-min-size.sh', f"{UPLOAD_FOLDER}/{file[0]}", size)
             app.logger.info('Script BASH (order-by-username.sh) executado com sucesso!')
 
-            users = bash_manager.convert_to_json_format(bash_output)
+            users = users_manager.convert_to_json_format(bash_output)
 
             return jsonify(users), 200
 
@@ -141,7 +147,7 @@ def create_app():
                 page = request.args.get('page', default=1, type=int)
                 filter_term = request.args.get('filter', default='')
 
-            file = bash_manager.search_file(arquivo)
+            file = files_manager.search_file(arquivo)
 
             if not arquivo or not file:
                 app.logger.error('Arquivo informado não existe.')
@@ -150,9 +156,9 @@ def create_app():
             bash_output = bash_manager.exec_script_bash('order-by-username.sh', f"{UPLOAD_FOLDER}/{file[0]}", order)
             app.logger.info('Script BASH (order-by-username.sh) executado com sucesso!')
 
-            users = bash_manager.convert_to_json_format(bash_output)
-            users = bash_manager.filter_users(users, filter_term)
-            users = bash_manager.paginate_users(users, page, limit)
+            users = users_manager.convert_to_json_format(bash_output)
+            users = users_manager.filter_users(users, filter_term)
+            users = users_manager.paginate_users(users, page, limit)
 
             return jsonify(users), 200
 
@@ -178,7 +184,7 @@ def create_app():
                 limit_min = request.args.get('min') # Campo obrigatório
                 limit_max = request.args.get('max') # Campo obrigatório
 
-            file = bash_manager.search_file(arquivo)
+            file = files_manager.search_file(arquivo)
 
             if not arquivo or not file:
                 app.logger.error('Arquivo informado não existe.')
@@ -194,9 +200,9 @@ def create_app():
             bash_output = bash_manager.exec_script_bash('between-msgs.sh', f"{UPLOAD_FOLDER}/{file[0]}", limit_min, limit_max)
             app.logger.info('Script BASH (between-msgs.sh) executado com sucesso!')
 
-            users = bash_manager.convert_to_json_format(bash_output)
-            users = bash_manager.filter_users(users, filter_term)
-            users = bash_manager.paginate_users(users, page, limit)
+            users = users_manager.convert_to_json_format(bash_output)
+            users = users_manager.filter_users(users, filter_term)
+            users = users_manager.paginate_users(users, page, limit)
 
             return jsonify(users), 200
 

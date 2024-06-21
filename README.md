@@ -9,9 +9,9 @@
 
 ** Arquivos Shell Scripts / Bash **
 
-  - `./between-msgs.sh input 50 200` _< arquivo min max >_
-  - `./max-min-size.sh` _< arquivo -min(op) >_
-  - `order-by-username.sh` _< arquivo -desc(op) |head -n 5 >_
+  - `$ ./between-msgs.sh input 50 200` _< arquivo min max >_
+  - `$ ./max-min-size.sh input` _< arquivo -min(op) >_
+  - `$ ./order-by-username.sh input -desc` _< arquivo -desc(op) |head -n 5 >_
 
 ** API Python/Flask **
 
@@ -25,11 +25,15 @@ Rotas:
   - [GET] `/users-between-msgs` Trecho com quantidade de mensagens na INBOX.
 
 
+
+![Screenshot postman Docker](docs/Screenshot postman Docker.png "Screenshot postman Docker")
+
+
 ### Test
 
 Testando ShellScripts:
 
-`$ scripts/bash/tests`
+`$ cd scripts/bash/tests`
 
 Testando API Python/Flask
 
